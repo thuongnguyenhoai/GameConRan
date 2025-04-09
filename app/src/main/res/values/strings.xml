@@ -1,3 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GameRan</string>
+    <string name="app_name">Snake Game</string>
+    <string name="game_title">Snake Game</string>
+    <string name="start_game">Start Game</string>
+    <string name="high_scores">High Scores</string>
+    <string name="share">Share</string>
+    <string name="back_to_menu">Back to Menu</string>
+    <string name="share_message">Come play Snake Game with me! My high score is: %d</string>
+    <string name="score_format">%d pts</string>
+    <string name="rank_format">#%d</string>
+    <string name="best_score">Best Score</string>
 </resources>

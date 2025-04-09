@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.os.Handler;
 import android.os.Looper;
+import android.content.SharedPreferences;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -29,6 +30,11 @@ public class GameView extends View {
     private Paint backgroundPaint;
     private Paint gridPaint;
     private Paint scorePaint;
+    private Paint snakeEyePaint;
+    private Paint snakeScalePaint;
+    private Paint snakeTonguePaint;
+    private float animationOffset;
+    private long lastUpdateTime;
     private int score;
     private Handler handler;
     private static final long GAME_SPEED = 200;
@@ -43,9 +49,13 @@ public class GameView extends View {
     private float pauseButtonSize;
     private boolean isPaused;
     private RectF pauseButtonRect;
+    private RectF backButtonRect;
+    private Paint backButtonPaint;
+    private Context context;
 
     public GameView(Context context) {
         super(context);
+        this.context = context;
         init();
     }
 
@@ -54,10 +64,30 @@ public class GameView extends View {
         direction = "RIGHT";
         isPlaying = true;
         score = 0;
+        animationOffset = 0;
+        lastUpdateTime = System.currentTimeMillis();
 
         snakePaint = new Paint();
         snakePaint.setColor(Color.parseColor("#4CAF50"));
         snakePaint.setStyle(Paint.Style.FILL);
+        snakePaint.setAntiAlias(true);
+
+        snakeEyePaint = new Paint();
+        snakeEyePaint.setColor(Color.BLACK);
+        snakeEyePaint.setStyle(Paint.Style.FILL);
+        snakeEyePaint.setAntiAlias(true);
+
+        snakeScalePaint = new Paint();
+        snakeScalePaint.setColor(Color.parseColor("#388E3C"));
+        snakeScalePaint.setStyle(Paint.Style.STROKE);
+        snakeScalePaint.setStrokeWidth(2);
+        snakeScalePaint.setAntiAlias(true);
+
+        snakeTonguePaint = new Paint();
+        snakeTonguePaint.setColor(Color.parseColor("#FF1744"));
+        snakeTonguePaint.setStyle(Paint.Style.STROKE);
+        snakeTonguePaint.setStrokeWidth(3);
+        snakeTonguePaint.setAntiAlias(true);
 
         foodPaint = new Paint();
         foodPaint.setColor(Color.parseColor("#F44336"));
@@ -102,6 +132,13 @@ public class GameView extends View {
 
         isPaused = false;
         pauseButtonRect = new RectF();
+        backButtonRect = new RectF();
+
+        backButtonPaint = new Paint();
+        backButtonPaint.setColor(Color.WHITE);
+        backButtonPaint.setStyle(Paint.Style.STROKE);
+        backButtonPaint.setStrokeWidth(4);
+        backButtonPaint.setAntiAlias(true);
     }
 
     @Override
@@ -117,6 +154,14 @@ public class GameView extends View {
                 w - pauseButtonSize - 20,
                 20,
                 w - 20,
+                pauseButtonSize + 20
+        );
+
+        // Set back button size and position (mirror of pause button)
+        backButtonRect.set(
+                20,
+                20,
+                pauseButtonSize + 20,
                 pauseButtonSize + 20
         );
 
@@ -156,19 +201,167 @@ public class GameView extends View {
             canvas.drawLine(0, i * cellSize, GRID_SIZE * cellSize, i * cellSize, gridPaint);
         }
 
-        // Draw snake with gradient effect
-        for (int i = 0; i < snake.size(); i++) {
-            Point p = snake.get(i);
-            float left = p.x * cellSize;
-            float top = p.y * cellSize;
+        // Update animation
+        long currentTime = System.currentTimeMillis();
+        float deltaTime = (currentTime - lastUpdateTime) / 1000f;
+        animationOffset += deltaTime * 2;
+        if (animationOffset > 1) animationOffset -= 1;
+        lastUpdateTime = currentTime;
 
-            // Gradient from head to tail
-            int alpha = 255 - (i * 255 / snake.size());
-            snakePaint.setAlpha(Math.max(alpha, 100));
+        // Draw snake body with smooth curves
+        if (snake.size() > 0) {
+            Path snakePath = new Path();
+            Point first = snake.get(0);
+            float startX = first.x * cellSize + cellSize/2;
+            float startY = first.y * cellSize + cellSize/2;
+            snakePath.moveTo(startX, startY);
 
-            canvas.drawRect(left + 2, top + 2, left + cellSize - 2, top + cellSize - 2, snakePaint);
+            for (int i = 1; i < snake.size(); i++) {
+                Point current = snake.get(i);
+                float endX = current.x * cellSize + cellSize/2;
+                float endY = current.y * cellSize + cellSize/2;
+                
+                // Calculate control points for smooth curve
+                float controlX = (startX + endX) / 2;
+                float controlY = (startY + endY) / 2;
+                
+                snakePath.quadTo(controlX, controlY, endX, endY);
+                
+                startX = endX;
+                startY = endY;
+            }
+
+            // Draw main body
+            Paint bodyPaint = new Paint(snakePaint);
+            bodyPaint.setStrokeWidth(cellSize * 0.8f);
+            bodyPaint.setStyle(Paint.Style.STROKE);
+            bodyPaint.setStrokeCap(Paint.Cap.ROUND);
+            canvas.drawPath(snakePath, bodyPaint);
+
+            // Draw scales pattern
+            for (int i = 0; i < snake.size(); i++) {
+                Point p = snake.get(i);
+                float centerX = p.x * cellSize + cellSize/2;
+                float centerY = p.y * cellSize + cellSize/2;
+                float scaleSize = cellSize * 0.3f;
+                
+                // Draw diamond pattern scales with animation
+                float offset = (animationOffset + i * 0.1f) % 1;
+                for (int j = 0; j < 4; j++) {
+                    float angle = (float) (j * Math.PI/2 + offset * Math.PI);
+                    float scaleX = centerX + (float)Math.cos(angle) * scaleSize;
+                    float scaleY = centerY + (float)Math.sin(angle) * scaleSize;
+                    canvas.drawCircle(scaleX, scaleY, 2, snakeScalePaint);
+                }
+            }
+
+            // Draw snake head
+            if (snake.size() > 0) {
+                Point head = snake.get(0);
+                float headX = head.x * cellSize + cellSize/2;
+                float headY = head.y * cellSize + cellSize/2;
+                
+                // Draw head shape
+                canvas.drawCircle(headX, headY, cellSize * 0.4f, snakePaint);
+                
+                // Draw eyes
+                float eyeOffset = cellSize * 0.2f;
+                float eyeSize = cellSize * 0.1f;
+                
+                // Determine eye positions based on direction
+                float leftEyeX = headX, leftEyeY = headY;
+                float rightEyeX = headX, rightEyeY = headY;
+                
+                switch (direction) {
+                    case "RIGHT":
+                        leftEyeX = headX + eyeOffset;
+                        rightEyeX = headX + eyeOffset;
+                        leftEyeY = headY - eyeOffset;
+                        rightEyeY = headY + eyeOffset;
+                        break;
+                    case "LEFT":
+                        leftEyeX = headX - eyeOffset;
+                        rightEyeX = headX - eyeOffset;
+                        leftEyeY = headY - eyeOffset;
+                        rightEyeY = headY + eyeOffset;
+                        break;
+                    case "UP":
+                        leftEyeX = headX - eyeOffset;
+                        rightEyeX = headX + eyeOffset;
+                        leftEyeY = headY - eyeOffset;
+                        rightEyeY = headY - eyeOffset;
+                        break;
+                    case "DOWN":
+                        leftEyeX = headX - eyeOffset;
+                        rightEyeX = headX + eyeOffset;
+                        leftEyeY = headY + eyeOffset;
+                        rightEyeY = headY + eyeOffset;
+                        break;
+                }
+                
+                canvas.drawCircle(leftEyeX, leftEyeY, eyeSize, snakeEyePaint);
+                canvas.drawCircle(rightEyeX, rightEyeY, eyeSize, snakeEyePaint);
+                
+                // Draw tongue with animation
+                float tongueLength = cellSize * 0.4f;
+                float tongueOffset = (float) (Math.sin(animationOffset * Math.PI * 2) * cellSize * 0.1f);
+                
+                Path tonguePath = new Path();
+                float tongueStartX = headX;
+                float tongueStartY = headY;
+                float tongueEndX = headX;
+                float tongueEndY = headY;
+                
+                switch (direction) {
+                    case "RIGHT":
+                        tongueStartX = headX + cellSize * 0.4f;
+                        tongueEndX = tongueStartX + tongueLength + tongueOffset;
+                        break;
+                    case "LEFT":
+                        tongueStartX = headX - cellSize * 0.4f;
+                        tongueEndX = tongueStartX - tongueLength - tongueOffset;
+                        break;
+                    case "UP":
+                        tongueStartY = headY - cellSize * 0.4f;
+                        tongueEndY = tongueStartY - tongueLength - tongueOffset;
+                        break;
+                    case "DOWN":
+                        tongueStartY = headY + cellSize * 0.4f;
+                        tongueEndY = tongueStartY + tongueLength + tongueOffset;
+                        break;
+                }
+                
+                tonguePath.moveTo(tongueStartX, tongueStartY);
+                tonguePath.lineTo(tongueEndX, tongueEndY);
+                
+                // Fork the tongue
+                float forkSize = cellSize * 0.2f;
+                switch (direction) {
+                    case "RIGHT":
+                        tonguePath.moveTo(tongueEndX - forkSize, tongueEndY - forkSize);
+                        tonguePath.lineTo(tongueEndX, tongueEndY);
+                        tonguePath.lineTo(tongueEndX - forkSize, tongueEndY + forkSize);
+                        break;
+                    case "LEFT":
+                        tonguePath.moveTo(tongueEndX + forkSize, tongueEndY - forkSize);
+                        tonguePath.lineTo(tongueEndX, tongueEndY);
+                        tonguePath.lineTo(tongueEndX + forkSize, tongueEndY + forkSize);
+                        break;
+                    case "UP":
+                        tonguePath.moveTo(tongueEndX - forkSize, tongueEndY + forkSize);
+                        tonguePath.lineTo(tongueEndX, tongueEndY);
+                        tonguePath.lineTo(tongueEndX + forkSize, tongueEndY + forkSize);
+                        break;
+                    case "DOWN":
+                        tonguePath.moveTo(tongueEndX - forkSize, tongueEndY - forkSize);
+                        tonguePath.lineTo(tongueEndX, tongueEndY);
+                        tonguePath.lineTo(tongueEndX + forkSize, tongueEndY - forkSize);
+                        break;
+                }
+                
+                canvas.drawPath(tonguePath, snakeTonguePaint);
+            }
         }
-        snakePaint.setAlpha(255);
 
         // Draw food with pulsing effect
         if (food != null) {
@@ -222,6 +415,27 @@ public class GameView extends View {
                     pauseButtonPaint
             );
         }
+
+        // Draw back button
+        canvas.drawRoundRect(backButtonRect, 10, 10, backButtonPaint);
+        
+        // Draw back arrow
+        float centerX = backButtonRect.centerX();
+        float centerY = backButtonRect.centerY();
+        float arrowSize = pauseButtonSize * 0.4f;
+        
+        Path arrowPath = new Path();
+        // Arrow head
+        arrowPath.moveTo(centerX + arrowSize/2, centerY - arrowSize/2);
+        arrowPath.lineTo(centerX - arrowSize/2, centerY);
+        arrowPath.lineTo(centerX + arrowSize/2, centerY + arrowSize/2);
+        // Arrow body
+        arrowPath.moveTo(centerX - arrowSize/2, centerY);
+        arrowPath.lineTo(centerX + arrowSize/2, centerY);
+        
+        Paint arrowPaint = new Paint(backButtonPaint);
+        arrowPaint.setStyle(Paint.Style.STROKE);
+        canvas.drawPath(arrowPath, arrowPaint);
 
         // Draw game over screen
         if (showGameOver) {
@@ -315,12 +529,35 @@ public class GameView extends View {
         }
     }
 
+    private void saveScore() {
+        SharedPreferences prefs = context.getSharedPreferences("SnakeGame", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        
+        // Save current score if it's a high score
+        int currentHighScore = prefs.getInt("highScore", 0);
+        if (score > currentHighScore) {
+            editor.putInt("highScore", score);
+        }
+        
+        // Save score to history
+        String scoresStr = prefs.getString("highScores", "");
+        String newScore = score + "|" + System.currentTimeMillis();
+        if (scoresStr.isEmpty()) {
+            scoresStr = newScore;
+        } else {
+            scoresStr = scoresStr + "," + newScore;
+        }
+        editor.putString("highScores", scoresStr);
+        editor.apply();
+    }
+
     private void gameOver() {
         isPlaying = false;
         showGameOver = true;
         if (score > highScore) {
             highScore = score;
         }
+        saveScore();
         invalidate();
     }
 
@@ -345,6 +582,13 @@ public class GameView extends View {
         float y = event.getY();
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            // Check if back button was clicked
+            if (backButtonRect.contains(x, y)) {
+                // Return to main menu
+                ((android.app.Activity) context).finish();
+                return true;
+            }
+            
             // Check if pause button was clicked
             if (pauseButtonRect.contains(x, y)) {
                 isPaused = !isPaused;
