@@ -4,7 +4,9 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
 import android.os.Handler;
@@ -37,6 +39,10 @@ public class GameView extends View {
     private boolean showGameOver;
     private int highScore;
     private float buttonLeft, buttonTop, buttonRight, buttonBottom;
+    private Paint pauseButtonPaint;
+    private float pauseButtonSize;
+    private boolean isPaused;
+    private RectF pauseButtonRect;
 
     public GameView(Context context) {
         super(context);
@@ -88,6 +94,14 @@ public class GameView extends View {
 
         showGameOver = false;
         highScore = 0;
+
+        pauseButtonPaint = new Paint();
+        pauseButtonPaint.setColor(Color.WHITE);
+        pauseButtonPaint.setStyle(Paint.Style.STROKE);
+        pauseButtonPaint.setStrokeWidth(4);
+
+        isPaused = false;
+        pauseButtonRect = new RectF();
     }
 
     @Override
@@ -96,6 +110,15 @@ public class GameView extends View {
         screenWidth = w;
         screenHeight = h;
         cellSize = Math.min(w, h) / GRID_SIZE;
+
+        // Set pause button size and position
+        pauseButtonSize = Math.min(w, h) / 12;
+        pauseButtonRect.set(
+                w - pauseButtonSize - 20,
+                20,
+                w - 20,
+                pauseButtonSize + 20
+        );
 
         // Initialize snake position
         snake.clear();
@@ -159,6 +182,47 @@ public class GameView extends View {
         canvas.drawText("Score: " + score, 30, screenHeight - 50, scorePaint);
         canvas.drawText("High Score: " + highScore, screenWidth - 200, screenHeight - 50, scorePaint);
 
+        // Draw pause button
+        canvas.drawRoundRect(pauseButtonRect, 10, 10, pauseButtonPaint);
+        if (isPaused) {
+            // Draw play triangle
+            float centerX = pauseButtonRect.centerX();
+            float centerY = pauseButtonRect.centerY();
+            float size = pauseButtonSize * 0.4f;
+
+            Paint trianglePaint = new Paint(pauseButtonPaint);
+            trianglePaint.setStyle(Paint.Style.FILL);
+
+            Path trianglePath = new Path();
+            trianglePath.moveTo(centerX - size/3, centerY - size/2);
+            trianglePath.lineTo(centerX - size/3, centerY + size/2);
+            trianglePath.lineTo(centerX + size/2, centerY);
+            trianglePath.close();
+
+            canvas.drawPath(trianglePath, trianglePaint);
+        } else {
+            // Draw pause bars
+            float barWidth = pauseButtonSize * 0.15f;
+            float barHeight = pauseButtonSize * 0.4f;
+            float centerX = pauseButtonRect.centerX();
+            float centerY = pauseButtonRect.centerY();
+
+            canvas.drawRect(
+                    centerX - barWidth * 2,
+                    centerY - barHeight/2,
+                    centerX - barWidth,
+                    centerY + barHeight/2,
+                    pauseButtonPaint
+            );
+            canvas.drawRect(
+                    centerX + barWidth,
+                    centerY - barHeight/2,
+                    centerX + barWidth * 2,
+                    centerY + barHeight/2,
+                    pauseButtonPaint
+            );
+        }
+
         // Draw game over screen
         if (showGameOver) {
             // Semi-transparent overlay
@@ -179,6 +243,19 @@ public class GameView extends View {
 
             canvas.drawRoundRect(buttonLeft, buttonTop, buttonRight, buttonBottom, 20, 20, buttonPaint);
             canvas.drawText("Tap to Restart", (buttonLeft + buttonRight)/2, (buttonTop + buttonBottom)/2 + 15, buttonTextPaint);
+        }
+
+        // Draw pause overlay
+        if (isPaused && !showGameOver) {
+            // Semi-transparent overlay
+            Paint overlayPaint = new Paint();
+            overlayPaint.setColor(Color.BLACK);
+            overlayPaint.setAlpha(120);
+            canvas.drawRect(0, 0, screenWidth, screenHeight, overlayPaint);
+
+            // Paused text
+            canvas.drawText("PAUSED", screenWidth/2, screenHeight/2, gameOverPaint);
+            canvas.drawText("Tap the button to resume", screenWidth/2, screenHeight/2 + 100, buttonTextPaint);
         }
     }
 
@@ -264,41 +341,61 @@ public class GameView extends View {
             return true;
         }
 
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                touchStartX = event.getX();
-                touchStartY = event.getY();
-                break;
-            case MotionEvent.ACTION_UP:
-                float dx = event.getX() - touchStartX;
-                float dy = event.getY() - touchStartY;
+        float x = event.getX();
+        float y = event.getY();
 
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    // Horizontal swipe
-                    if (dx > 0 && !direction.equals("LEFT")) {
-                        direction = "RIGHT";
-                    } else if (dx < 0 && !direction.equals("RIGHT")) {
-                        direction = "LEFT";
-                    }
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            // Check if pause button was clicked
+            if (pauseButtonRect.contains(x, y)) {
+                isPaused = !isPaused;
+                if (isPaused) {
+                    pause();
                 } else {
-                    // Vertical swipe
-                    if (dy > 0 && !direction.equals("UP")) {
-                        direction = "DOWN";
-                    } else if (dy < 0 && !direction.equals("DOWN")) {
-                        direction = "UP";
-                    }
+                    resume();
                 }
-                break;
+                invalidate();
+                return true;
+            }
+
+            if (!isPaused) {
+                touchStartX = x;
+                touchStartY = y;
+            }
+        } else if (event.getAction() == MotionEvent.ACTION_UP && !isPaused) {
+            float dx = x - touchStartX;
+            float dy = y - touchStartY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal swipe
+                if (dx > 0 && !direction.equals("LEFT")) {
+                    direction = "RIGHT";
+                } else if (dx < 0 && !direction.equals("RIGHT")) {
+                    direction = "LEFT";
+                }
+            } else {
+                // Vertical swipe
+                if (dy > 0 && !direction.equals("UP")) {
+                    direction = "DOWN";
+                } else if (dy < 0 && !direction.equals("DOWN")) {
+                    direction = "UP";
+                }
+            }
         }
         return true;
     }
 
     public void pause() {
         isPlaying = false;
+        isPaused = true;
+        invalidate();
     }
 
     public void resume() {
-        isPlaying = true;
-        startGame();
+        if (!showGameOver) {
+            isPlaying = true;
+            isPaused = false;
+            startGame();
+            invalidate();
+        }
     }
 } 
