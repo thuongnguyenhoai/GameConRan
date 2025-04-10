@@ -37,7 +37,9 @@ public class GameView extends View {
     private long lastUpdateTime;
     private int score;
     private Handler handler;
-    private static final long GAME_SPEED = 200;
+    private static final long INITIAL_GAME_SPEED = 400; // Initial speed of 400ms
+    private static final long MIN_GAME_SPEED = 200; // Minimum speed limit (not too fast)
+    private long currentGameSpeed; // Track current game speed
     private float touchStartX, touchStartY;
     private Paint gameOverPaint;
     private Paint buttonPaint;
@@ -52,6 +54,7 @@ public class GameView extends View {
     private RectF backButtonRect;
     private Paint backButtonPaint;
     private Context context;
+    private Runnable gameRunnable;  // Add this field to track the game runnable
 
     public GameView(Context context) {
         super(context);
@@ -60,10 +63,17 @@ public class GameView extends View {
     }
 
     private void init() {
+        // Remove old handler and runnable if they exist
+        if (handler != null && gameRunnable != null) {
+            handler.removeCallbacks(gameRunnable);
+        }
+        
         snake = new ArrayList<>();
         direction = "RIGHT";
         isPlaying = true;
         score = 0;
+        handler = new Handler(Looper.getMainLooper());
+        currentGameSpeed = INITIAL_GAME_SPEED; // Reset speed to initial value
         animationOffset = 0;
         lastUpdateTime = System.currentTimeMillis();
 
@@ -105,7 +115,6 @@ public class GameView extends View {
         scorePaint.setTextSize(50);
         scorePaint.setTextAlign(Paint.Align.LEFT);
 
-        handler = new Handler(Looper.getMainLooper());
         startGame();
 
         gameOverPaint = new Paint();
@@ -474,19 +483,23 @@ public class GameView extends View {
     }
 
     private void startGame() {
-        handler.postDelayed(new Runnable() {
+        gameRunnable = new Runnable() {
             @Override
             public void run() {
-                if (isPlaying) {
+                if (isPlaying && !isPaused) {
                     update();
                     invalidate();
-                    handler.postDelayed(this, GAME_SPEED);
                 }
+                handler.postDelayed(this, currentGameSpeed);
             }
-        }, GAME_SPEED);
+        };
+        handler.postDelayed(gameRunnable, currentGameSpeed);
     }
 
     private void update() {
+        if (!isPlaying || isPaused) return;
+
+        // Update snake position based on direction
         Point head = snake.get(0);
         Point newHead = new Point(head.x, head.y);
 
@@ -520,9 +533,17 @@ public class GameView extends View {
 
         snake.add(0, newHead);
 
-        // Check if food is eaten
+        // Check if snake ate food
         if (newHead.x == food.x && newHead.y == food.y) {
-            score += 10;
+            score++;
+            // Increase speed more gradually based on score
+            if (currentGameSpeed > MIN_GAME_SPEED) { // Don't let speed go below MIN_GAME_SPEED
+                // Decrease by 5ms every 2 points
+                currentGameSpeed = INITIAL_GAME_SPEED - ((score / 2) * 5);
+                if (currentGameSpeed < MIN_GAME_SPEED) {
+                    currentGameSpeed = MIN_GAME_SPEED;
+                }
+            }
             generateFood();
         } else {
             snake.remove(snake.size() - 1);
@@ -554,6 +575,11 @@ public class GameView extends View {
     private void gameOver() {
         isPlaying = false;
         showGameOver = true;
+        currentGameSpeed = INITIAL_GAME_SPEED; // Reset speed when game over
+        // Remove callbacks when game is over
+        if (handler != null && gameRunnable != null) {
+            handler.removeCallbacks(gameRunnable);
+        }
         if (score > highScore) {
             highScore = score;
         }
@@ -631,6 +657,10 @@ public class GameView extends View {
     public void pause() {
         isPlaying = false;
         isPaused = true;
+        // Remove callbacks when paused
+        if (handler != null && gameRunnable != null) {
+            handler.removeCallbacks(gameRunnable);
+        }
         invalidate();
     }
 
