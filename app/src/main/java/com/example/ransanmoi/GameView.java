@@ -15,23 +15,25 @@ public class GameView extends View {
         void onGameOver(int finalScore);
     }
 
-    private static final int GRID_SIZE = 18;
+    private static final int GRID_SIZE = 16;
     private float cellSize;
     private ArrayList<Point> snake;
     private Point food;
     private int direction = 0; // 0: phải, 1: xuống, 2: trái, 3: lên
     private boolean isPlaying = false;
-    private Paint snakePaint, foodPaint, gridPaint;
+    private Paint snakePaint, foodPaint, borderPaint;
     private Random random;
     private GameOverCallback gameOverCallback;
     public SnakeSprite snakeSprite;
 
     // Thêm biến cho chuyển động nội suy
     private float interpolationProgress = 0f;
-    private static final float MOVEMENT_SPEED = 6f; // Tốc độ di chuyển (ô/giây)
+    private static final float MOVEMENT_SPEED = 4f; // Tốc độ di chuyển (ô/giây)
     private long lastUpdateTime;
     private ArrayList<Point> previousPositions;
     private ArrayList<Point> targetPositions;
+
+    private boolean isPaused = false;
 
     public GameView(Context context) {
         super(context);
@@ -63,11 +65,12 @@ public class GameView extends View {
         foodPaint.setColor(Color.RED);
         foodPaint.setStyle(Paint.Style.FILL);
 
-        // Khởi tạo Paint cho lưới
-        gridPaint = new Paint();
-        gridPaint.setColor(Color.DKGRAY);
-        gridPaint.setStyle(Paint.Style.STROKE);
-        gridPaint.setAlpha(50); // Làm mờ lưới
+        // Khởi tạo Paint cho viền
+        borderPaint = new Paint();
+        borderPaint.setColor(Color.WHITE);
+        borderPaint.setStyle(Paint.Style.STROKE);
+        borderPaint.setStrokeWidth(4f);
+        borderPaint.setAlpha(100);
 
         lastUpdateTime = System.currentTimeMillis();
         resetGame();
@@ -125,11 +128,8 @@ public class GameView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Vẽ lưới
-        for (int i = 0; i <= GRID_SIZE; i++) {
-            canvas.drawLine(i * cellSize, 0, i * cellSize, GRID_SIZE * cellSize, gridPaint);
-            canvas.drawLine(0, i * cellSize, GRID_SIZE * cellSize, i * cellSize, gridPaint);
-        }
+        // Vẽ viền cho khu vực chơi game
+        canvas.drawRect(0, 0, GRID_SIZE * cellSize, GRID_SIZE * cellSize, borderPaint);
 
         // Vẽ mồi
         canvas.drawCircle(
@@ -139,17 +139,20 @@ public class GameView extends View {
             foodPaint
         );
 
-        // Cập nhật thời gian và nội suy
-        long currentTime = System.currentTimeMillis();
-        float deltaTime = (currentTime - lastUpdateTime) / 1000f;
-        lastUpdateTime = currentTime;
+        // Chỉ cập nhật thời gian và nội suy khi không tạm dừng
+        if (!isPaused) {
+            // Cập nhật thời gian và nội suy
+            long currentTime = System.currentTimeMillis();
+            float deltaTime = (currentTime - lastUpdateTime) / 1000f;
+            lastUpdateTime = currentTime;
 
-        // Cập nhật tiến trình nội suy
-        interpolationProgress += MOVEMENT_SPEED * deltaTime;
-        if (interpolationProgress >= 1f) {
-            // Hoàn thành một bước di chuyển
-            interpolationProgress = 0f;
-            updateSnakePosition();
+            // Cập nhật tiến trình nội suy
+            interpolationProgress += MOVEMENT_SPEED * deltaTime;
+            if (interpolationProgress >= 1f) {
+                // Hoàn thành một bước di chuyển
+                interpolationProgress = 0f;
+                updateSnakePosition();
+            }
         }
 
         // Vẽ rắn với vị trí nội suy
@@ -187,8 +190,8 @@ public class GameView extends View {
             }
         }
 
-        // Tiếp tục vẽ animation
-        if (isPlaying) {
+        // Tiếp tục vẽ animation chỉ khi đang chơi và không tạm dừng
+        if (isPlaying && !isPaused) {
             invalidate();
         }
     }
@@ -281,5 +284,10 @@ public class GameView extends View {
     public void update() {
         // Force a redraw of the view
         invalidate();
+    }
+
+    public void setPaused(boolean paused) {
+        isPaused = paused;
+        invalidate(); // Yêu cầu vẽ lại để dừng animation
     }
 }

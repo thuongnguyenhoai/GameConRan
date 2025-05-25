@@ -1,6 +1,7 @@
 package com.example.ransanmoi;
 
 import android.app.Dialog;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.DialogInterface;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class GameActivity extends AppCompatActivity implements View.OnClickListener {
     private GameView gameView;
@@ -30,6 +32,9 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
     private boolean dialogShowing = false;
     private Dialog gameOverDialog;
     private boolean isPaused = false;
+    private ConstraintLayout mainLayout;
+    private static final String PREFS_NAME = "GameSettings";
+    private static final String SELECTED_MAP_KEY = "selectedMap";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +43,7 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
 
         try {
             // Khởi tạo các view
+            mainLayout = findViewById(R.id.mainLayout);
             gameView = findViewById(R.id.gameView);
             tvScore = findViewById(R.id.tvScore);
             btnUp = findViewById(R.id.btnUp);
@@ -46,6 +52,9 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
             btnRight = findViewById(R.id.btnRight);
             btnBack = findViewById(R.id.btnBack);
             btnPause = findViewById(R.id.btnPause);
+
+            // Thiết lập background theo map đã chọn
+            setMapBackground();
 
             // Thiết lập sự kiện click cho các nút
             btnUp.setOnClickListener(this);
@@ -76,6 +85,35 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void setMapBackground() {
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String selectedMap = settings.getString(SELECTED_MAP_KEY, "map_vu_tru");
+        
+        int backgroundResId;
+        switch (selectedMap) {
+            case "map_rung_xanh":
+                backgroundResId = R.drawable.bg_rung_xanh;
+                break;
+            case "map_sa_mac":
+                backgroundResId = R.drawable.bg_sa_mac;
+                break;
+            case "map_dai_duong":
+                backgroundResId = R.drawable.bg_dai_duong;
+                break;
+            case "map_hang_pha_le":
+                backgroundResId = R.drawable.bg_hang_pha_le;
+                break;
+            case "map_bang_tuyet":
+                backgroundResId = R.drawable.bg_bang_tuyet;
+                break;
+            default:
+                backgroundResId = R.drawable.bg_vu_tru;
+                break;
+        }
+        
+        mainLayout.setBackground(getDrawable(backgroundResId));
+    }
+
     private long getCurrentDelay() {
         // Tính toán delay dựa trên điểm số
         int speedLevel = score / SPEED_UP_INTERVAL; // Số lần đã tăng tốc
@@ -93,7 +131,9 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
         
         if (isPaused) {
             handler.removeCallbacksAndMessages(null);
+            gameView.setPaused(true);
         } else {
+            gameView.setPaused(false);
             startGameLoop();
         }
     }

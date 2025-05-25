@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 
 public class SnakeSprite {
     private Bitmap headImage;
@@ -27,9 +29,23 @@ public class SnakeSprite {
     public SnakeSprite(Context context, int partSize) {
         this.context = context;
         this.partSize = partSize;
+        
+        // Cấu hình Paint để làm nổi bật rắn
         this.paint = new Paint();
         paint.setAntiAlias(true);        // Làm mịn các cạnh
         paint.setFilterBitmap(true);     // Làm mịn bitmap khi scale
+        paint.setAlpha(255);             // Độ trong suốt tối đa
+
+        // Tạo ColorMatrix để tăng độ sáng
+        ColorMatrix colorMatrix = new ColorMatrix();
+        colorMatrix.set(new float[] {
+            1.2f, 0, 0, 0, 20f,  // Red
+            0, 1.2f, 0, 0, 20f,  // Green
+            0, 0, 1.2f, 0, 20f,  // Blue
+            0, 0, 0, 1, 0        // Alpha
+        });
+        paint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
+        
         initializeSprites();
     }
 
@@ -40,7 +56,7 @@ public class SnakeSprite {
         tailImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.duoi_ran_rung);
 
         // Scale ảnh với kích thước lớn hơn một chút
-        int scaledSize = (int)(partSize * 1.15f); // Giảm scale xuống để tránh chồng lấn
+        int scaledSize = (int)(partSize * 1.2f); // Tăng kích thước lên để rắn to hơn
         headImage = Bitmap.createScaledBitmap(headImage, scaledSize, scaledSize, true);
         bodyImage = Bitmap.createScaledBitmap(bodyImage, scaledSize, scaledSize, true);
         tailImage = Bitmap.createScaledBitmap(tailImage, scaledSize, scaledSize, true);
@@ -63,12 +79,12 @@ public class SnakeSprite {
     }
 
     public void drawHead(Canvas canvas, float x, float y, int direction) {
-        float offset = partSize * 0.075f; // Giảm offset để các phần không chồng lên nhau
+        float offset = partSize * 0.1f; // Tăng offset để rắn to hơn
         canvas.drawBitmap(rotatedHeads[direction], x - offset, y - offset, paint);
     }
 
     public void drawBody(Canvas canvas, float x, float y, int fromDir, int toDir) {
-        float offset = partSize * 0.075f;
+        float offset = partSize * 0.1f;
         
         if (fromDir != toDir) {
             // Vẽ phần thân chính ở khúc rẽ
@@ -78,7 +94,7 @@ public class SnakeSprite {
             // Chỉ thêm một phần thân phụ ở vị trí phù hợp
             float extraX = x;
             float extraY = y;
-            float shiftAmount = partSize * 0.2f; // Giảm khoảng cách dịch chuyển
+            float shiftAmount = partSize * 0.25f; // Tăng khoảng cách dịch chuyển
 
             // Xác định vị trí phần thân phụ dựa vào hướng rẽ
             if ((fromDir == RIGHT && toDir == DOWN) || (fromDir == DOWN && toDir == RIGHT)) {
@@ -105,7 +121,7 @@ public class SnakeSprite {
     }
 
     public void drawTail(Canvas canvas, float x, float y, int direction) {
-        float offset = partSize * 0.075f;
+        float offset = partSize * 0.1f;
         canvas.drawBitmap(rotatedTails[direction], x - offset, y - offset, paint);
     }
 
