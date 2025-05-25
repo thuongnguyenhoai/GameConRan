@@ -23,7 +23,10 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
     private ImageButton btnBack, btnPause;
     private Handler handler;
     private int score = 0;
-    private static final long GAME_UPDATE_DELAY = 200; // Tốc độ cập nhật game (ms)
+    private static final long INITIAL_DELAY = 400; // Tốc độ ban đầu (ms)
+    private static final long MIN_DELAY = 100;    // Tốc độ tối đa (ms)
+    private static final int SPEED_UP_INTERVAL = 10; // Tăng tốc sau mỗi 10 điểm
+    private static final long SPEED_INCREASE = 30;   // Giảm delay 30ms mỗi lần tăng tốc
     private boolean dialogShowing = false;
     private Dialog gameOverDialog;
     private boolean isPaused = false;
@@ -71,6 +74,15 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
             Toast.makeText(this, "Lỗi khởi tạo game: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+
+    private long getCurrentDelay() {
+        // Tính toán delay dựa trên điểm số
+        int speedLevel = score / SPEED_UP_INTERVAL; // Số lần đã tăng tốc
+        long currentDelay = INITIAL_DELAY - (speedLevel * SPEED_INCREASE);
+        
+        // Đảm bảo không giảm xuống dưới tốc độ tối đa
+        return Math.max(currentDelay, MIN_DELAY);
     }
 
     private void togglePause() {
@@ -152,16 +164,26 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
                 if (gameView != null && gameView.isPlaying() && !isPaused) {
                     gameView.update();
                     updateScore();
-                    handler.postDelayed(this, GAME_UPDATE_DELAY);
+                    // Lên lịch cho lần cập nhật tiếp theo với delay mới
+                    handler.postDelayed(this, getCurrentDelay());
                 }
             }
-        }, GAME_UPDATE_DELAY);
+        }, getCurrentDelay());
     }
 
     private void updateScore() {
         if (gameView != null) {
-            score = gameView.getSnakeLength() - 3;
-            tvScore.setText("Điểm: " + score);
+            int newScore = gameView.getSnakeLength() - 3;
+            if (newScore != score) {
+                score = newScore;
+                tvScore.setText("Điểm: " + score);
+                
+                // Kiểm tra nếu đạt mốc tăng tốc
+                if (score > 0 && score % SPEED_UP_INTERVAL == 0) {
+                    // Hiển thị thông báo tăng tốc
+                    Toast.makeText(this, "Tăng tốc độ!", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 

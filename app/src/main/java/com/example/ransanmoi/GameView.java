@@ -15,16 +15,23 @@ public class GameView extends View {
         void onGameOver(int finalScore);
     }
 
-    private static final int GRID_SIZE = 12; // Giảm kích thước lưới để rắn to hơn
-    private float cellSize; // Kích thước mỗi ô
-    private ArrayList<Point> snake; // Danh sách các điểm của rắn
-    private Point food; // Vị trí mồi
+    private static final int GRID_SIZE = 18;
+    private float cellSize;
+    private ArrayList<Point> snake;
+    private Point food;
     private int direction = 0; // 0: phải, 1: xuống, 2: trái, 3: lên
     private boolean isPlaying = false;
     private Paint snakePaint, foodPaint, gridPaint;
     private Random random;
     private GameOverCallback gameOverCallback;
     public SnakeSprite snakeSprite;
+
+    // Thêm biến cho chuyển động nội suy
+    private float interpolationProgress = 0f;
+    private static final float MOVEMENT_SPEED = 6f; // Tốc độ di chuyển (ô/giây)
+    private long lastUpdateTime;
+    private ArrayList<Point> previousPositions;
+    private ArrayList<Point> targetPositions;
 
     public GameView(Context context) {
         super(context);
@@ -42,6 +49,8 @@ public class GameView extends View {
 
     private void init() {
         snake = new ArrayList<>();
+        previousPositions = new ArrayList<>();
+        targetPositions = new ArrayList<>();
         random = new Random();
         
         // Khởi tạo Paint cho rắn
@@ -60,6 +69,7 @@ public class GameView extends View {
         gridPaint.setStyle(Paint.Style.STROKE);
         gridPaint.setAlpha(50); // Làm mờ lưới
 
+        lastUpdateTime = System.currentTimeMillis();
         resetGame();
     }
 
@@ -70,11 +80,19 @@ public class GameView extends View {
         snake.add(new Point(GRID_SIZE/2 - 1, GRID_SIZE/2));
         snake.add(new Point(GRID_SIZE/2 - 2, GRID_SIZE/2));
         
-        // Tạo mồi ở vị trí ngẫu nhiên
-        spawnFood();
+        // Khởi tạo vị trí nội suy
+        previousPositions.clear();
+        targetPositions.clear();
+        for (Point p : snake) {
+            previousPositions.add(new Point(p.x, p.y));
+            targetPositions.add(new Point(p.x, p.y));
+        }
         
+        interpolationProgress = 0f;
+        spawnFood();
         direction = 0;
         isPlaying = true;
+        lastUpdateTime = System.currentTimeMillis();
         invalidate();
     }
 
@@ -121,42 +139,124 @@ public class GameView extends View {
             foodPaint
         );
 
-        // Vẽ rắn với sprite
+        // Cập nhật thời gian và nội suy
+        long currentTime = System.currentTimeMillis();
+        float deltaTime = (currentTime - lastUpdateTime) / 1000f;
+        lastUpdateTime = currentTime;
+
+        // Cập nhật tiến trình nội suy
+        interpolationProgress += MOVEMENT_SPEED * deltaTime;
+        if (interpolationProgress >= 1f) {
+            // Hoàn thành một bước di chuyển
+            interpolationProgress = 0f;
+            updateSnakePosition();
+        }
+
+        // Vẽ rắn với vị trí nội suy
         if (snakeSprite != null && snake.size() > 0) {
             // Vẽ đầu rắn
-            Point head = snake.get(0);
-            snakeSprite.drawHead(canvas, head.x * cellSize, head.y * cellSize, direction);
+            float headX = lerp(previousPositions.get(0).x, targetPositions.get(0).x, interpolationProgress) * cellSize;
+            float headY = lerp(previousPositions.get(0).y, targetPositions.get(0).y, interpolationProgress) * cellSize;
+            snakeSprite.drawHead(canvas, headX, headY, direction);
 
             // Vẽ thân rắn
             for (int i = 1; i < snake.size() - 1; i++) {
-                Point current = snake.get(i);
-                Point prev = snake.get(i - 1);
-                Point next = snake.get(i + 1);
+                float currentX = lerp(previousPositions.get(i).x, targetPositions.get(i).x, interpolationProgress) * cellSize;
+                float currentY = lerp(previousPositions.get(i).y, targetPositions.get(i).y, interpolationProgress) * cellSize;
+                float prevX = lerp(previousPositions.get(i-1).x, targetPositions.get(i-1).x, interpolationProgress) * cellSize;
+                float prevY = lerp(previousPositions.get(i-1).y, targetPositions.get(i-1).y, interpolationProgress) * cellSize;
+                float nextX = lerp(previousPositions.get(i+1).x, targetPositions.get(i+1).x, interpolationProgress) * cellSize;
+                float nextY = lerp(previousPositions.get(i+1).y, targetPositions.get(i+1).y, interpolationProgress) * cellSize;
+
+                int fromDir = getDirectionFromCoords(currentX/cellSize, currentY/cellSize, prevX/cellSize, prevY/cellSize);
+                int toDir = getDirectionFromCoords(nextX/cellSize, nextY/cellSize, currentX/cellSize, currentY/cellSize);
                 
-                // Tính hướng từ điểm trước đến điểm hiện tại
-                int fromDir = getDirection(current, prev);
-                // Tính hướng từ điểm hiện tại đến điểm tiếp theo
-                int toDir = getDirection(next, current);
-                
-                snakeSprite.drawBody(canvas, current.x * cellSize, current.y * cellSize, fromDir, toDir);
+                snakeSprite.drawBody(canvas, currentX, currentY, fromDir, toDir);
             }
 
             // Vẽ đuôi rắn
             if (snake.size() > 1) {
-                Point tail = snake.get(snake.size() - 1);
-                Point beforeTail = snake.get(snake.size() - 2);
-                int tailDir = getDirection(tail, beforeTail);
-                snakeSprite.drawTail(canvas, tail.x * cellSize, tail.y * cellSize, tailDir);
+                int lastIndex = snake.size() - 1;
+                float tailX = lerp(previousPositions.get(lastIndex).x, targetPositions.get(lastIndex).x, interpolationProgress) * cellSize;
+                float tailY = lerp(previousPositions.get(lastIndex).y, targetPositions.get(lastIndex).y, interpolationProgress) * cellSize;
+                float beforeTailX = lerp(previousPositions.get(lastIndex-1).x, targetPositions.get(lastIndex-1).x, interpolationProgress) * cellSize;
+                float beforeTailY = lerp(previousPositions.get(lastIndex-1).y, targetPositions.get(lastIndex-1).y, interpolationProgress) * cellSize;
+
+                int tailDir = getDirectionFromCoords(tailX/cellSize, tailY/cellSize, beforeTailX/cellSize, beforeTailY/cellSize);
+                snakeSprite.drawTail(canvas, tailX, tailY, tailDir);
             }
+        }
+
+        // Tiếp tục vẽ animation
+        if (isPlaying) {
+            invalidate();
         }
     }
 
-    // Tính hướng di chuyển giữa hai điểm
-    private int getDirection(Point from, Point to) {
-        if (to.x > from.x) return SnakeSprite.RIGHT;
-        if (to.x < from.x) return SnakeSprite.LEFT;
-        if (to.y > from.y) return SnakeSprite.DOWN;
-        return SnakeSprite.UP;
+    private float lerp(float start, float end, float t) {
+        return start + (end - start) * t;
+    }
+
+    private int getDirectionFromCoords(float fromX, float fromY, float toX, float toY) {
+        if (Math.abs(toX - fromX) > Math.abs(toY - fromY)) {
+            return toX > fromX ? SnakeSprite.RIGHT : SnakeSprite.LEFT;
+        } else {
+            return toY > fromY ? SnakeSprite.DOWN : SnakeSprite.UP;
+        }
+    }
+
+    private void updateSnakePosition() {
+        // Lưu vị trí hiện tại làm vị trí trước
+        previousPositions.clear();
+        for (Point p : snake) {
+            previousPositions.add(new Point(p.x, p.y));
+        }
+
+        // Di chuyển rắn
+        for(int i = snake.size()-1; i > 0; i--){
+            snake.set(i, new Point(snake.get(i-1).x, snake.get(i-1).y));
+        }
+
+        // Cập nhật vị trí đầu rắn theo hướng
+        Point head = snake.get(0);
+        if(direction == 0){
+            snake.set(0, new Point(head.x + 1, head.y));
+        } else if(direction == 1){
+            snake.set(0, new Point(head.x, head.y + 1));
+        } else if(direction == 2){
+            snake.set(0, new Point(head.x - 1, head.y));
+        } else if(direction == 3){
+            snake.set(0, new Point(head.x, head.y - 1));
+        }
+
+        // Cập nhật vị trí đích
+        targetPositions.clear();
+        for (Point p : snake) {
+            targetPositions.add(new Point(p.x, p.y));
+        }
+
+        // Kiểm tra va chạm và xử lý game over
+        if(snake.get(0).x < 0 || snake.get(0).x >= GRID_SIZE ||
+           snake.get(0).y < 0 || snake.get(0).y >= GRID_SIZE){
+            gameOver();
+            return;
+        }
+        
+        for(int i = 1; i < snake.size(); i++){
+            if(snake.get(0).x == snake.get(i).x && snake.get(0).y == snake.get(i).y){
+                gameOver();
+                return;
+            }
+        }
+
+        // Kiểm tra ăn mồi
+        if (snake.get(0).x == food.x && snake.get(0).y == food.y) {
+            Point last = snake.get(snake.size() - 1);
+            snake.add(new Point(last.x, last.y));
+            previousPositions.add(new Point(last.x, last.y));
+            targetPositions.add(new Point(last.x, last.y));
+            spawnFood();
+        }
     }
 
     public void setDirection(int newDirection) {
@@ -164,56 +264,6 @@ public class GameView extends View {
         if (Math.abs(direction - newDirection) != 2) {
             direction = newDirection;
         }
-    }
-
-    public void update() {
-        if (!isPlaying) return;
-
-        // Lấy vị trí đầu rắn
-        Point head = snake.get(0);
-        Point newHead = new Point(head.x, head.y);
-
-        // Di chuyển theo hướng hiện tại
-        switch (direction) {
-            case 0: // Phải
-                newHead.x++;
-                break;
-            case 1: // Xuống
-                newHead.y++;
-                break;
-            case 2: // Trái
-                newHead.x--;
-                break;
-            case 3: // Lên
-                newHead.y--;
-                break;
-        }
-
-        // Kiểm tra va chạm với tường
-        if (newHead.x < 0 || newHead.x >= GRID_SIZE || 
-            newHead.y < 0 || newHead.y >= GRID_SIZE) {
-            gameOver();
-            return;
-        }
-
-        // Kiểm tra va chạm với thân rắn
-        if (snake.contains(newHead)) {
-            gameOver();
-            return;
-        }
-
-        // Thêm đầu mới
-        snake.add(0, newHead);
-
-        // Kiểm tra ăn mồi
-        if (newHead.x == food.x && newHead.y == food.y) {
-            spawnFood();
-        } else {
-            // Nếu không ăn mồi, xóa đuôi
-            snake.remove(snake.size() - 1);
-        }
-
-        invalidate();
     }
 
     public boolean isPlaying() {
@@ -227,4 +277,9 @@ public class GameView extends View {
     public int getSnakeLength() {
         return snake.size();
     }
-} 
+
+    public void update() {
+        // Force a redraw of the view
+        invalidate();
+    }
+}
