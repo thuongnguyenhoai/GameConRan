@@ -3,6 +3,7 @@
     <item>
         <bitmap
             android:src="@drawable/map_rung_xanh"
-            android:tileMode="repeat"/>
+            android:tileMode="disabled"
+            android:gravity="fill"/>
     </item>
 </layer-list> 

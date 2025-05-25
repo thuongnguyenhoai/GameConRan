@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -111,7 +112,13 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
         
+        // Thiết lập background với scale type phù hợp
         mainLayout.setBackground(getDrawable(backgroundResId));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            mainLayout.setBackground(getDrawable(backgroundResId));
+        } else {
+            mainLayout.setBackgroundDrawable(getDrawable(backgroundResId));
+        }
     }
 
     private long getCurrentDelay() {

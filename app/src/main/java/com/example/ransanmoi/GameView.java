@@ -15,7 +15,7 @@ public class GameView extends View {
         void onGameOver(int finalScore);
     }
 
-    private static final int GRID_SIZE = 16;
+    private static final int GRID_SIZE = 14;
     private float cellSize;
     private ArrayList<Point> snake;
     private Point food;
@@ -28,7 +28,7 @@ public class GameView extends View {
 
     // Thêm biến cho chuyển động nội suy
     private float interpolationProgress = 0f;
-    private static final float MOVEMENT_SPEED = 4f; // Tốc độ di chuyển (ô/giây)
+    private static final float MOVEMENT_SPEED = 6f; // Tốc độ di chuyển (ô/giây)
     private long lastUpdateTime;
     private ArrayList<Point> previousPositions;
     private ArrayList<Point> targetPositions;
