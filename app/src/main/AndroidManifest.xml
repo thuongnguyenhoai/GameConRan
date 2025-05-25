@@ -25,6 +25,7 @@
             android:name=".GameActivity"
             android:screenOrientation="portrait"
             android:exported="false" />
+        <activity android:name=".HighScoresActivity" />
     </application>
 
 </manifest>

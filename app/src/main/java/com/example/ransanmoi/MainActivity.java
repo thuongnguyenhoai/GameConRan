@@ -53,8 +53,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Intent intent = new Intent(this, GameActivity.class);
             startActivity(intent);
         } else if (v.getId() == R.id.btnLeaderboard) {
-            // TODO: Show leaderboard
-            Toast.makeText(this, "Xem bảng xếp hạng", Toast.LENGTH_SHORT).show();
+            // Mở màn hình bảng xếp hạng
+            Intent intent = new Intent(this, HighScoresActivity.class);
+            startActivity(intent);
         } else if (v.getId() == R.id.btnSelectMap) {
             // TODO: Show map selection
             Toast.makeText(this, "Chọn bản đồ", Toast.LENGTH_SHORT).show();

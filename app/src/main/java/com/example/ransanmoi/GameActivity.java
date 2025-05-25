@@ -12,7 +12,9 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import android.content.DialogInterface;
 
 public class GameActivity extends AppCompatActivity implements View.OnClickListener {
     private GameView gameView;
@@ -102,6 +104,9 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
     private void showGameOverDialog(final int finalScore) {
         if (dialogShowing) return;
         dialogShowing = true;
+
+        // Lưu điểm số mới
+        HighScoresActivity.saveNewScore(this, finalScore);
 
         runOnUiThread(new Runnable() {
             @Override
