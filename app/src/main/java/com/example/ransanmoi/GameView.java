@@ -15,7 +15,7 @@ public class GameView extends View {
         void onGameOver(int finalScore);
     }
 
-    private static final int GRID_SIZE = 20; // Kích thước lưới game
+    private static final int GRID_SIZE = 12; // Giảm kích thước lưới để rắn to hơn
     private float cellSize; // Kích thước mỗi ô
     private ArrayList<Point> snake; // Danh sách các điểm của rắn
     private Point food; // Vị trí mồi
@@ -24,6 +24,7 @@ public class GameView extends View {
     private Paint snakePaint, foodPaint, gridPaint;
     private Random random;
     private GameOverCallback gameOverCallback;
+    public SnakeSprite snakeSprite;
 
     public GameView(Context context) {
         super(context);
@@ -57,6 +58,7 @@ public class GameView extends View {
         gridPaint = new Paint();
         gridPaint.setColor(Color.DKGRAY);
         gridPaint.setStyle(Paint.Style.STROKE);
+        gridPaint.setAlpha(50); // Làm mờ lưới
 
         resetGame();
     }
@@ -95,6 +97,10 @@ public class GameView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         cellSize = (float) Math.min(w, h) / GRID_SIZE;
+        // Khởi tạo snakeSprite sau khi có cellSize
+        if (snakeSprite == null) {
+            snakeSprite = new SnakeSprite(getContext(), (int)cellSize);
+        }
     }
 
     @Override
@@ -115,16 +121,42 @@ public class GameView extends View {
             foodPaint
         );
 
-        // Vẽ rắn
-        for (Point p : snake) {
-            canvas.drawRect(
-                p.x * cellSize,
-                p.y * cellSize,
-                (p.x + 1) * cellSize,
-                (p.y + 1) * cellSize,
-                snakePaint
-            );
+        // Vẽ rắn với sprite
+        if (snakeSprite != null && snake.size() > 0) {
+            // Vẽ đầu rắn
+            Point head = snake.get(0);
+            snakeSprite.drawHead(canvas, head.x * cellSize, head.y * cellSize, direction);
+
+            // Vẽ thân rắn
+            for (int i = 1; i < snake.size() - 1; i++) {
+                Point current = snake.get(i);
+                Point prev = snake.get(i - 1);
+                Point next = snake.get(i + 1);
+                
+                // Tính hướng từ điểm trước đến điểm hiện tại
+                int fromDir = getDirection(current, prev);
+                // Tính hướng từ điểm hiện tại đến điểm tiếp theo
+                int toDir = getDirection(next, current);
+                
+                snakeSprite.drawBody(canvas, current.x * cellSize, current.y * cellSize, fromDir, toDir);
+            }
+
+            // Vẽ đuôi rắn
+            if (snake.size() > 1) {
+                Point tail = snake.get(snake.size() - 1);
+                Point beforeTail = snake.get(snake.size() - 2);
+                int tailDir = getDirection(tail, beforeTail);
+                snakeSprite.drawTail(canvas, tail.x * cellSize, tail.y * cellSize, tailDir);
+            }
         }
+    }
+
+    // Tính hướng di chuyển giữa hai điểm
+    private int getDirection(Point from, Point to) {
+        if (to.x > from.x) return SnakeSprite.RIGHT;
+        if (to.x < from.x) return SnakeSprite.LEFT;
+        if (to.y > from.y) return SnakeSprite.DOWN;
+        return SnakeSprite.UP;
     }
 
     public void setDirection(int newDirection) {

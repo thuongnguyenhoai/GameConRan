@@ -213,4 +213,12 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
             showGameOverDialog(score);
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (gameView != null && gameView.snakeSprite != null) {
+            gameView.snakeSprite.recycle();
+        }
+    }
 } 
