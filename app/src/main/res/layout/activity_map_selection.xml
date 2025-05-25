@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
+
+    <!-- Top Bar -->
+    <RelativeLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#4CAF50"
+        android:elevation="4dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#FFFFFF" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Chọn Bản Đồ"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackground"
+            android:text="Lưu"
+            android:textColor="#FFFFFF" />
+    </RelativeLayout>
+
+    <!-- Maps Grid -->
+    <GridLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/topBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:columnCount="2">
+
+        <!-- Map Vũ Trụ -->
+        <FrameLayout
+            android:id="@+id/mapClassic"
+            android:layout_width="160dp"
+            android:layout_height="130dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/map_thumbnail_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/map_vu_tru"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Vũ Trụ"
+                    android:textColor="#333333"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Map Rừng Xanh -->
+        <FrameLayout
+            android:id="@+id/mapForest"
+            android:layout_width="160dp"
+            android:layout_height="130dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/map_thumbnail_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/map_rung_xanh"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Rừng Xanh"
+                    android:textColor="#333333"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Map Sa Mạc -->
+        <FrameLayout
+            android:id="@+id/mapDesert"
+            android:layout_width="160dp"
+            android:layout_height="130dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/map_thumbnail_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/map_sa_mac"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Sa Mạc"
+                    android:textColor="#333333"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Map Đại Dương -->
+        <FrameLayout
+            android:id="@+id/mapIce"
+            android:layout_width="160dp"
+            android:layout_height="130dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/map_thumbnail_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/map_dai_duong"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Đại Dương"
+                    android:textColor="#333333"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Map Hang Pha Lê -->
+        <FrameLayout
+            android:id="@+id/mapVolcano"
+            android:layout_width="160dp"
+            android:layout_height="130dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/map_thumbnail_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/map_hang_pha_le"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Hang Pha Lê"
+                    android:textColor="#333333"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Map Băng Tuyết -->
+        <FrameLayout
+            android:id="@+id/mapCity"
+            android:layout_width="160dp"
+            android:layout_height="130dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/map_thumbnail_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/map_bang_tuyet"
+                    android:scaleType="fitCenter"
+                    android:padding="0dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Băng Tuyết"
+                    android:textColor="#333333"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+    </GridLayout>
+</RelativeLayout> 

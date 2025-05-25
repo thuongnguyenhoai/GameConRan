@@ -57,8 +57,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Intent intent = new Intent(this, HighScoresActivity.class);
             startActivity(intent);
         } else if (v.getId() == R.id.btnSelectMap) {
-            // TODO: Show map selection
-            Toast.makeText(this, "Chọn bản đồ", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, MapSelectionActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         } else if (v.getId() == R.id.btnSelectSkin) {
             // TODO: Show skin selection
             Toast.makeText(this, "Chọn ngoại hình", Toast.LENGTH_SHORT).show();

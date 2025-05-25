@@ -26,6 +26,11 @@
             android:screenOrientation="portrait"
             android:exported="false" />
         <activity android:name=".HighScoresActivity" />
+        <activity
+            android:name=".MapSelectionActivity"
+            android:label="Chọn Bản Đồ"
+            android:theme="@style/Theme.AppCompat"
+            android:exported="false" />
     </application>
 
 </manifest>
