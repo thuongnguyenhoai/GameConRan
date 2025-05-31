@@ -91,24 +91,49 @@ public class SnakeSprite {
             int rotationIndex = getCornerRotation(fromDir, toDir);
             canvas.drawBitmap(rotatedBodies[rotationIndex], x - offset, y - offset, paint);
 
-            // Chỉ thêm một phần thân phụ ở vị trí phù hợp
+            // Thêm phần thân phụ để làm mượt khúc cong
             float extraX = x;
             float extraY = y;
-            float shiftAmount = partSize * 0.25f; // Tăng khoảng cách dịch chuyển
+            float shiftAmount = partSize * 0.3f; // Tăng khoảng cách để nối khớp hơn
 
-            // Xác định vị trí phần thân phụ dựa vào hướng rẽ
-            if ((fromDir == RIGHT && toDir == DOWN) || (fromDir == DOWN && toDir == RIGHT)) {
-                extraX -= shiftAmount;
-                extraY -= shiftAmount;
-            } else if ((fromDir == RIGHT && toDir == UP) || (fromDir == UP && toDir == RIGHT)) {
-                extraX -= shiftAmount;
-                extraY += shiftAmount;
-            } else if ((fromDir == LEFT && toDir == DOWN) || (fromDir == DOWN && toDir == LEFT)) {
-                extraX += shiftAmount;
-                extraY -= shiftAmount;
-            } else if ((fromDir == LEFT && toDir == UP) || (fromDir == UP && toDir == LEFT)) {
-                extraX += shiftAmount;
-                extraY += shiftAmount;
+            // Điều chỉnh vị trí phần thân phụ theo hướng rẽ
+            switch (fromDir) {
+                case RIGHT:
+                    if (toDir == DOWN) {
+                        extraX -= shiftAmount;
+                        extraY -= shiftAmount;
+                    } else if (toDir == UP) {
+                        extraX -= shiftAmount;
+                        extraY += shiftAmount;
+                    }
+                    break;
+                case LEFT:
+                    if (toDir == DOWN) {
+                        extraX += shiftAmount;
+                        extraY -= shiftAmount;
+                    } else if (toDir == UP) {
+                        extraX += shiftAmount;
+                        extraY += shiftAmount;
+                    }
+                    break;
+                case DOWN:
+                    if (toDir == RIGHT) {
+                        extraX -= shiftAmount;
+                        extraY -= shiftAmount;
+                    } else if (toDir == LEFT) {
+                        extraX += shiftAmount;
+                        extraY -= shiftAmount;
+                    }
+                    break;
+                case UP:
+                    if (toDir == RIGHT) {
+                        extraX -= shiftAmount;
+                        extraY += shiftAmount;
+                    } else if (toDir == LEFT) {
+                        extraX += shiftAmount;
+                        extraY += shiftAmount;
+                    }
+                    break;
             }
 
             // Vẽ phần thân phụ với hướng phù hợp
@@ -148,6 +173,27 @@ public class SnakeSprite {
             rotatedHeads[i].recycle();
             rotatedBodies[i].recycle();
             rotatedTails[i].recycle();
+        }
+    }
+
+    public void updateSprites(Bitmap newHead, Bitmap newBody, Bitmap newTail) {
+        // Giải phóng bộ nhớ của bitmap cũ
+        recycle();
+
+        // Cập nhật bitmap mới
+        headImage = newHead;
+        bodyImage = newBody;
+        tailImage = newTail;
+
+        // Tạo lại các phiên bản xoay
+        rotatedHeads = new Bitmap[4];
+        rotatedBodies = new Bitmap[4];
+        rotatedTails = new Bitmap[4];
+
+        for (int i = 0; i < 4; i++) {
+            rotatedHeads[i] = rotateImage(headImage, i * 90);
+            rotatedBodies[i] = rotateImage(bodyImage, i * 90);
+            rotatedTails[i] = rotateImage(tailImage, i * 90);
         }
     }
 } 

@@ -31,6 +31,11 @@
             android:label="Chọn Bản Đồ"
             android:theme="@style/Theme.AppCompat"
             android:exported="false" />
+        <activity
+            android:name=".SnakeSkinSelectionActivity"
+            android:label="Chọn Ngoại Hình Rắn"
+            android:theme="@style/Theme.AppCompat"
+            android:exported="false" />
     </application>
 
 </manifest>

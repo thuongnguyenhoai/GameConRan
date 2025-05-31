@@ -276,8 +276,11 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (gameView != null && gameView.isPlaying() && !dialogShowing && !isPaused) {
-            startGameLoop();
+        if (gameView != null) {
+            gameView.reloadSkin();
+            if (gameView.isPlaying() && !dialogShowing && !isPaused) {
+                startGameLoop();
+            }
         }
     }
 

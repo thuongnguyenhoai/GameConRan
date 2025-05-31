@@ -61,8 +61,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivity(intent);
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         } else if (v.getId() == R.id.btnSelectSkin) {
-            // TODO: Show skin selection
-            Toast.makeText(this, "Chọn ngoại hình", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, SnakeSkinSelectionActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         } else if (v.getId() == R.id.btnExit) {
             finish();
         }

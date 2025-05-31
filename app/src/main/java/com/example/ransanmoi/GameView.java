@@ -1,6 +1,9 @@
 package com.example.ransanmoi;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -28,21 +31,27 @@ public class GameView extends View {
 
     // Thêm biến cho chuyển động nội suy
     private float interpolationProgress = 0f;
-    private static final float MOVEMENT_SPEED = 6f; // Tốc độ di chuyển (ô/giây)
+    private static final float MOVEMENT_SPEED = 4f; // Tốc độ di chuyển (ô/giây)
     private long lastUpdateTime;
     private ArrayList<Point> previousPositions;
     private ArrayList<Point> targetPositions;
 
     private boolean isPaused = false;
 
+    private Bitmap bmHead, bmBody, bmTail;
+    private static final String PREF_NAME = "SnakePrefs";
+    private static final String SELECTED_SKIN_KEY = "selected_skin";
+
     public GameView(Context context) {
         super(context);
         init();
+        loadSelectedSkin(context);
     }
 
     public GameView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
+        loadSelectedSkin(context);
     }
 
     public void setGameOverCallback(GameOverCallback callback) {
@@ -74,6 +83,59 @@ public class GameView extends View {
 
         lastUpdateTime = System.currentTimeMillis();
         resetGame();
+    }
+
+    private void loadSelectedSkin(Context context) {
+        if (cellSize <= 0) {
+            return; // Chỉ tải skin khi đã có kích thước cell
+        }
+
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        String selectedSkin = prefs.getString(SELECTED_SKIN_KEY, "Rắn Độc Tố"); // Mặc định là Rắn Độc Tố
+
+        // Chọn hình ảnh dựa trên loại rắn được chọn
+        int headResId, bodyResId, tailResId;
+        
+        switch (selectedSkin) {
+            case "Rắn Lửa":
+                headResId = R.drawable.dau_ran_lua;
+                bodyResId = R.drawable.than_ran_lua;
+                tailResId = R.drawable.duoi_ran_lua;
+                break;
+            case "Rắn Băng":
+                headResId = R.drawable.dau_ran_daiduong;
+                bodyResId = R.drawable.than_ran_daiduong;
+                tailResId = R.drawable.duoi_ran_daiduong;
+                break;
+            case "Rắn Lục":
+                headResId = R.drawable.dau_ran_luc;
+                bodyResId = R.drawable.than_ran_luc;
+                tailResId = R.drawable.duoi_ran_luc;
+                break;
+            default: // Rắn Độc Tố
+                headResId = R.drawable.dau_ran_docto;
+                bodyResId = R.drawable.than_ran_docto;
+                tailResId = R.drawable.duoi_ran_docto;
+                break;
+        }
+
+        // Load các bitmap
+        bmHead = BitmapFactory.decodeResource(getResources(), headResId);
+        bmBody = BitmapFactory.decodeResource(getResources(), bodyResId);
+        bmTail = BitmapFactory.decodeResource(getResources(), tailResId);
+
+        // Scale bitmap theo kích thước cell
+        int scaledSize = (int)(cellSize * 1.2f); // Tăng kích thước lên 20% để rắn to hơn
+        bmHead = Bitmap.createScaledBitmap(bmHead, scaledSize, scaledSize, true);
+        bmBody = Bitmap.createScaledBitmap(bmBody, scaledSize, scaledSize, true);
+        bmTail = Bitmap.createScaledBitmap(bmTail, scaledSize, scaledSize, true);
+
+        // Khởi tạo lại SnakeSprite với hình ảnh mới
+        if (snakeSprite != null) {
+            snakeSprite.recycle(); // Giải phóng bộ nhớ của bitmap cũ
+        }
+        snakeSprite = new SnakeSprite(context, (int)cellSize);
+        snakeSprite.updateSprites(bmHead, bmBody, bmTail);
     }
 
     private void resetGame() {
@@ -118,10 +180,8 @@ public class GameView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         cellSize = (float) Math.min(w, h) / GRID_SIZE;
-        // Khởi tạo snakeSprite sau khi có cellSize
-        if (snakeSprite == null) {
-            snakeSprite = new SnakeSprite(getContext(), (int)cellSize);
-        }
+        // Tải lại skin sau khi có kích thước cell
+        loadSelectedSkin(getContext());
     }
 
     @Override
@@ -289,5 +349,12 @@ public class GameView extends View {
     public void setPaused(boolean paused) {
         isPaused = paused;
         invalidate(); // Yêu cầu vẽ lại để dừng animation
+    }
+
+    public void reloadSkin() {
+        if (cellSize > 0) { // Chỉ tải lại khi đã có kích thước cell
+            loadSelectedSkin(getContext());
+            invalidate();
+        }
     }
 }
